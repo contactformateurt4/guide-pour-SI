@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>T4 - Pupitre SI Mobile | Outil de traçage des signaux d'itinéraire</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-color: #0a0c12;
+            --card-bg: #15181f;
+            --primary: #0066cc;
+            --primary-dark: #004d99;
+            --primary-light: #1a75d4;
+            --accent: #ffcc00;
+            --accent-dark: #e6b800;
+            --text: #f0f3f8;
+            --text-muted: #9aa3b5;
+            --danger: #dc3545;
+            --warning-bg: #2d1a1a;
+            --warning-border: #ff5555;
+            --lampe-off: #2a2e3a;
+            --lampe-on: #fff5e0;
+            --card-hover: #1f2530;
+            --border-subtle: #2a2f3c;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 12px;
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            max-width: 680px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 20px 18px; 
+            border-radius: 28px; 
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5); 
+            width: 100%; 
+            transition: all 0.2s ease;
+        }
+
+        h1 { 
+            color: var(--accent); 
+            text-align: center; 
+            font-size: 1.5rem; 
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        h1 small {
+            font-size: 0.7rem;
+            background: rgba(255,204,0,0.2);
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-weight: normal;
+            color: var(--accent);
+        }
+
+        .search-container { 
+            margin: 20px 0 16px; 
+            position: relative;
+        }
+        
+        #si-search {
+            width: 100%; 
+            padding: 14px 18px; 
+            border-radius: 60px; 
+            border: 1px solid var(--border-subtle);
+            background: #0f1119; 
+            color: white; 
+            font-size: 1rem; 
+            outline: none; 
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        #si-search:focus { 
+            border-color: var(--primary); 
+            background: #1a1e2a;
+            box-shadow: 0 0 0 3px rgba(0,102,204,0.2);
+        }
+        
+        .alert-box { 
+            background: var(--warning-bg); 
+            border-left: 5px solid var(--warning-border); 
+            padding: 12px 16px; 
+            margin-bottom: 24px; 
+            font-size: 0.85rem; 
+            border-radius: 16px;
+            font-weight: 500;
+            backdrop-filter: blur(2px);
+        }
+
+        .zone-selector { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); 
+            gap: 10px; 
+            margin-bottom: 24px; 
+        }
+
+        button, .signal-card { 
+            padding: 12px 8px; 
+            border: none; 
+            border-radius: 60px; 
+            cursor: pointer; 
+            background: #1e2432; 
+            color: white; 
+            font-weight: 600; 
+            font-size: 0.85rem;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        
+        button:active { transform: scale(0.96); }
+        
+        button.primary-zone {
+            background: var(--primary);
+            box-shadow: 0 2px 6px rgba(0,102,204,0.3);
+        }
+        
+        button.secondary { 
+            background: #252c3c; 
+            border: 1px solid #3a4358;
+        }
+        
+        button.direction-active { 
+            background: var(--primary-dark) !important; 
+            border: 2px solid var(--accent) !important;
+            box-shadow: 0 0 0 1px rgba(255,204,0,0.3);
+            transform: scale(0.98);
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+            gap: 10px; 
+            margin-top: 16px; 
+            margin-bottom: 8px;
+        }
+        
+        .signal-card { 
+            background: #1a1f2a;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+        
+        .signal-card.selected-card { 
+            border-color: var(--accent); 
+            background: #2a3246;
+            color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+
+        #display-area { 
+            margin-top: 28px; 
+            padding: 20px 12px 18px; 
+            border-top: 1px solid var(--border-subtle); 
+            text-align: center; 
+            background: #0f121b;
+            border-radius: 32px;
+        }
+        
+        .aspect-container { 
+            width: 120px; 
+            height: 120px; 
+            background: #01050f; 
+            border-radius: 50%; 
+            margin: 20px auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            border: 3px solid #3a4158;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .signal-bar { 
+            position: relative; 
+            width: 18px; 
+            height: 70px; 
+        }
+        .bar-bottom { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 18px; 
+            height: 34px; 
+            background: #eef5ff; 
+            border-radius: 4px;
+            box-shadow: 0 0 2px white;
+        }
+        .bar-top { 
+            position: absolute; 
+            bottom: 34px; 
+            left: 0; 
+            width: 18px; 
+            height: 34px; 
+            background: #eef5ff; 
+            transform-origin: bottom center; 
+            transition: transform 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .dir-median .bar-top { transform: rotate(0deg); }
+        .dir-gauche .bar-top { transform: rotate(-38deg); }
+        .dir-droite .bar-top { transform: rotate(38deg); }
+
+        .lampe-box { 
+            display: flex; 
+            justify-content: center; 
+            gap: 50px; 
+            margin: 20px 0 12px;
+            background: #0a0d14;
+            padding: 12px 20px;
+            border-radius: 60px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .lampe { 
+            width: 20px; 
+            height: 20px; 
+            background: var(--lampe-off); 
+            border-radius: 50%; 
+            border: 1px solid #5f6a82; 
+            transition: all 0.1s ease;
+        }
+        .lampe-label { 
+            font-size: 0.7rem; 
+            color: #9aa3b5; 
+            margin-top: 6px; 
+            font-weight: 600;
+        }
+        .lampe.active { 
+            background: #fff2b5; 
+            box-shadow: 0 0 16px 4px rgba(255,235,120,0.9); 
+            border-color: #ffdd77;
+        }
+
+        #res-dir { 
+            color: var(--accent); 
+            font-size: 1.2rem; 
+            margin-top: 12px; 
+            font-weight: bold;
+            background: rgba(0,0,0,0.4);
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 40px;
+        }
+        
+        #res-bouton { 
+            font-size: 1rem; 
+            color: #6bc46d; 
+            font-weight: 700; 
+            margin-top: 12px;
+            background: #0f2115;
+            padding: 6px 12px;
+            border-radius: 32px;
+            display: inline-block;
+        }
+        
+        #instruction-text { 
+            font-size: 0.9rem; 
+            color: var(--text-muted); 
+            min-height: 60px; 
+            padding: 0 8px;
+            font-weight: 500;
+        }
+
+        footer { 
+            text-align: center; 
+            padding: 24px 0 12px; 
+            font-size: 0.75rem; 
+            color: #5f6a80; 
+        }
+        
+        .hidden { display: none; }
+        
+        @media (max-width: 500px) {
+            .container { padding: 16px; }
+            .zone-selector { gap: 8px; }
+            button, .signal-card { font-size: 0.75rem; padding: 10px 4px; }
+            .aspect-container { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        🚆 T4 - Pupitre SI
+        <small>Mobile</small>
+    </h1>
+    
+    <div class="search-container">
+        <input type="text" id="si-search" placeholder="🔍 Rechercher un signal (ex: 66, SI 20, 52)..." autocomplete="off">
+    </div>
+
+    <div class="alert-box">⚠️ <strong>PCT4 obligatoire</strong> avant tout traçage d'itinéraire. Vérifier les consignes.</div>
+
+    <div class="zone-selector" id="zone-btns"></div>
+    <div id="signal-selection-zone" class="hidden"><div class="grid" id="signals-grid"></div></div>
+
+    <div id="display-area">
+        <p id="instruction-text">📡 Choisissez une zone ou recherchez un signal par son nom.</p>
+        <div id="direction-btns" class="zone-selector"></div>
+        
+        <div id="result-display" class="hidden">
+            <h2 id="res-si" style="margin: 0 0 6px 0; color: var(--accent); font-size: 1.6rem;"></h2>
+            <div id="aspect-visual" class="aspect-container">
+                <div class="signal-bar"><div class="bar-top"></div><div class="bar-bottom"></div></div>
+            </div>
+            
+            <div id="lampe-container" class="lampe-box hidden">
+                <div style="text-align:center"><div id="lampe-gauche" class="lampe"></div><div class="lampe-label">Lampe G</div></div>
+                <div style="text-align:center"><div id="lampe-droite" class="lampe"></div><div class="lampe-label">Lampe D</div></div>
+            </div>
+
+            <p id="res-dir"></p>
+            <p id="res-bouton"></p>
+        </div>
+    </div>
+</div>
+
+<footer>⚡ Développé par <strong>Zaber MOHAMMAD</strong> • version T4 ITT</footer>
+
+<script>
+    // --------------------------------------------------------------
+    //  BASE DE DONNÉES MISE À JOUR : 
+    //  ✅ SI 20 -> direction "2TT" passe de médian à DROITE
+    //  ✅ SI 52 -> direction "2TT" passe de médian à DROITE
+    //  ✅ AUCUNE AUTRE MODIFICATION
+    // --------------------------------------------------------------
+    const data = {
+        "BONDY": [
+            { id: "SI 1", directions: { "SAS 1": "dir-droite", "SAS 2": "dir-gauche" } },
+            { id: "SI 2", directions: { "1 TER": "dir-median" } },
+            { id: "SI 4", directions: { "1 TER": "dir-median" } },
+            { id: "SI 10", directions: { "SAS 1": "dir-gauche", "SAS 2": "dir-droite" }, note: "RETOURNEMENT" },
+            { id: "SI 11", directions: { "DÉPART": "dir-droite", "ARRIVÉE": "dir-gauche" } },
+            { id: "SI 12", directions: { "ARRIVÉE": "dir-median" } },
+            { id: "SI 13", directions: { "DÉPART": "dir-droite", "ARRIVÉE": "dir-gauche" } },
+            { id: "SI 14", directions: { "SAS 1": "dir-gauche", "SAS 2": "dir-droite" } },
+            { id: "SI 15", directions: { "1TT": "dir-median" } }
+        ],
+        "SI 23, 21, 20": [
+            { id: "SI 23", directions: { "1TT": "dir-median" } },
+            { id: "SI 21", directions: { "1TT": "dir-median" } },
+            // ✅ SI 20 : "2TT" devient dir-droite (au lieu de dir-median)
+            // "2BA" reste dir-gauche (inchangé)
+            { id: "SI 20", directions: { "2TT": "dir-droite", "2BA": "dir-gauche" } }
+        ],
+        "GARGAN": [
+            { id: "SI 28", directions: { "2TT": "dir-droite" } },
+            { id: "SI 30", directions: { "2TT": "dir-droite" } },
+            { id: "SI 31", directions: { "VOIE A": "dir-droite", "VOIE B": "dir-median", "VOIE C": "dir-gauche" } },
+            { id: "SI 32", directions: { "2TT": "dir-median" } },
+            { id: "SI 34", directions: { "VOIE B": "dir-median" } },
+            { id: "SI 39", directions: { "VOIE A": "dir-droite", "VOIE B": "dir-median", "VOIE C": "dir-gauche" }, note: "RETOURNEMENT" },
+            { id: "SI 40", directions: { "VOIE A": "dir-gauche", "VOIE B": "dir-median", "VOIE C": "dir-droite" } },
+            { id: "SI 41", directions: { "1CM": "dir-droite", "1TT": "dir-median" } },
+            { id: "SI 43", directions: { "1TT": "dir-droite" } },
+            { id: "SI 45", directions: { "1TT": "dir-droite" } }
+        ],
+        "AULNAY": [
+            { id: "SI 50", directions: { "2TT": "dir-droite" } },
+            // ✅ SI 52 : "2TT" devient dir-droite (au lieu de dir-median)
+            { id: "SI 52", directions: { "2TT": "dir-droite" } },
+            { id: "SI 53", directions: { "QUAI 1": "dir-droite", "QUAI 2": "dir-gauche" } },
+            { id: "SI 55", directions: { "QUAI 1": "dir-droite", "QUAI 2": "dir-gauche" }, note: "RETOURNEMENT" }
+        ],
+        "PJV / MFM": [
+            { id: "SI 62", directions: { "2 CM": "dir-droite" } },
+            { id: "SI 63", directions: { "Q1 PJV": "dir-median", "Q2 PJV": "dir-gauche" }, note: "Pas de balise courte." },
+            { id: "SI 64", directions: { "2CM": "dir-median" } },
+            { id: "SI 65", directions: { "MFM": "dir-median" }, note: "Le système privilégie toujours le quai 2 en priorité." },
+            { id: "SI 66", special: "lampe", directions: { 
+                "1 CM": { aspect: "dir-median", bouton: "TRACER MÉDIAN", lampe: "gauche" }, 
+                "2 CM": { aspect: "dir-median", bouton: "TRACER DROITE", lampe: "droite" } 
+            }, note: "Pied d'oeuvre : tracer pupitre -> détruire -> tracer boîtier." },
+            { id: "SI 68", special: "lampe", directions: { 
+                "1 CM": { aspect: "dir-median", bouton: "TRACER MÉDIAN", lampe: "gauche" }, 
+                "2 CM": { aspect: "dir-median", bouton: "TRACER DROITE", lampe: "droite" } 
+            }, note: "Pied d'oeuvre : tracer pupitre -> détruire -> tracer boîtier." }
+        ]
+    };
+
+    const zoneBtns = document.getElementById('zone-btns');
+    const signalsGrid = document.getElementById('signals-grid');
+    const signalSelectZone = document.getElementById('signal-selection-zone');
+    const dirBtns = document.getElementById('direction-btns');
+    const resultDisplay = document.getElementById('result-display');
+    const instructionText = document.getElementById('instruction-text');
+    const visual = document.getElementById('aspect-visual');
+    const searchInput = document.getElementById('si-search');
+    const lampeContainer = document.getElementById('lampe-container');
+    const lampeGauche = document.getElementById('lampe-gauche');
+    const lampeDroite = document.getElementById('lampe-droite');
+
+    let currentZoneContext = null;
+    let currentSiObject = null;
+
+    // --- Helper : Nettoyer les sélections visuelles ---
+    function clearAllHighlights() {
+        document.querySelectorAll('#zone-btns button').forEach(btn => {
+            btn.style.background = "#1e2432";
+            btn.classList.remove('primary-zone');
+        });
+        document.querySelectorAll('.signal-card').forEach(card => card.classList.remove('selected-card'));
+        document.querySelectorAll('#direction-btns button').forEach(b => b.classList.remove('direction-active'));
+    }
+
+    // --- Afficher les signaux d'une zone ---
+    function selectZone(zoneName) {
+        searchInput.value = '';
+        currentZoneContext = zoneName;
+        clearAllHighlights();
+        // highlight zone button
+        const zoneBtn = Array.from(zoneBtns.children).find(btn => btn.innerText === zoneName);
+        if (zoneBtn) {
+            zoneBtn.style.background = "var(--primary-dark)";
+            zoneBtn.classList.add('primary-zone');
+        }
+        signalSelectZone.classList.remove('hidden');
+        signalsGrid.innerHTML = '';
+        dirBtns.innerHTML = '';
+        resultDisplay.classList.add('hidden');
+        instructionText.innerText = `📍 Zone ${zoneName} — Sélectionnez un signal :`;
+        
+        const signalsList = [...data[zoneName]];
+        signalsList.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+        signalsList.forEach(si => createSignalCard(si));
+    }
+
+    function createSignalCard(si) {
+        const card = document.createElement('div');
+        card.className = 'signal-card';
+        card.innerText = si.id;
+        card.setAttribute('data-id', si.id);
+        card.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.signal-card').forEach(c => c.classList.remove('selected-card'));
+            card.classList.add('selected-card');
+            selectSignal(si);
+        };
+        signalsGrid.appendChild(card);
+    }
+
+    // --- Recherche avancée ---
+    let searchTimerRef;
+    function searchSignal() {
+        clearTimeout(searchTimerRef);
+        searchTimerRef = setTimeout(() => {
+            const query = searchInput.value.trim();
+            if (query === "") {
+                signalSelectZone.classList.add('hidden');
+                dirBtns.innerHTML = '';
+                resultDisplay.classList.add('hidden');
+                instructionText.innerText = "Choisissez une zone ou recherchez un signal.";
+                return;
+            }
+            signalSelectZone.classList.remove('hidden');
+            signalsGrid.innerHTML = '';
+            dirBtns.innerHTML = '';
+            resultDisplay.classList.add('hidden');
+            instructionText.innerText = `🔎 Résultats pour "${query}" :`;
+            const allSignals = Object.values(data).flat();
+            const filtered = allSignals.filter(si => si.id.toLowerCase().includes(query.toLowerCase()));
+            if (filtered.length === 0) {
+                signalsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#aaa;">Aucun signal trouvé</div>';
+                return;
+            }
+            filtered.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+            filtered.forEach(si => createSignalCard(si));
+        }, 200);
+    }
+
+    // --- Affichage des directions du signal ---
+    function selectSignal(si) {
+        currentSiObject = si;
+        dirBtns.innerHTML = '';
+        resultDisplay.classList.add('hidden');
+        instructionText.innerText = `🚦 ${si.id} — Choisissez un itinéraire / direction :`;
+        
+        const dirEntries = Object.entries(si.directions);
+        if (dirEntries.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.innerText = "Aucune direction disponible";
+            placeholder.style.padding = "12px";
+            placeholder.style.color = "#aaa";
+            dirBtns.appendChild(placeholder);
+            return;
+        }
+        
+        dirEntries.forEach(([dirName, configValue]) => {
+            const btn = document.createElement('button');
+            btn.className = 'secondary';
+            btn.innerText = dirName;
+            btn.onclick = () => {
+                document.querySelectorAll('#direction-btns button').forEach(b => b.classList.remove('direction-active'));
+                btn.classList.add('direction-active');
+                showAspect(si, dirName, configValue);
+            };
+            dirBtns.appendChild(btn);
+        });
+    }
+
+    // --- Affichage de l'aspect du signal + lampe + pupitre ---
+    function showAspect(si, dirName, rawConfig) {
+        resultDisplay.classList.remove('hidden');
+        document.getElementById('res-si').innerText = si.id;
+        document.getElementById('res-dir').innerText = `Direction : ${dirName}`;
+        
+        // Masquer lampe par défaut et réinitialiser
+        lampeContainer.classList.add('hidden');
+        lampeGauche.classList.remove('active');
+        lampeDroite.classList.remove('active');
+        document.getElementById('res-bouton').innerText = "";
+        
+        // Cas spécial avec lampe (SI 66, SI 68)
+        if (si.special === "lampe" && typeof rawConfig === 'object' && rawConfig.aspect) {
+            lampeContainer.classList.remove('hidden');
+            const aspectClass = rawConfig.aspect;
+            visual.className = `aspect-container ${aspectClass}`;
+            document.getElementById('res-bouton').innerText = `🔘 Au pupitre : ${rawConfig.bouton}`;
+            if (rawConfig.lampe === "gauche") lampeGauche.classList.add('active');
+            if (rawConfig.lampe === "droite") lampeDroite.classList.add('active');
+            
+            if (si.note) {
+                instructionText.innerHTML = `<span style="color:var(--accent)">📌 ${si.note}</span>`;
+            } else {
+                instructionText.innerHTML = "Aspect du signal (lampe orientée)";
+            }
+            if (window.innerWidth < 768) resultDisplay.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        
+        // Cas normal : rawConfig est une chaîne comme "dir-median", "dir-droite", "dir-gauche"
+        let directionClass = rawConfig;
+        if (typeof rawConfig === 'string') {
+            directionClass = rawConfig;
+        } else if (rawConfig && typeof rawConfig === 'object' && rawConfig.aspect) {
+            directionClass = rawConfig.aspect;
+        }
+        
+        // Sécurisation : si la valeur n'est pas valide, on met median par défaut
+        if (!["dir-median", "dir-gauche", "dir-droite"].includes(directionClass)) {
+            directionClass = "dir-median";
+        }
+        
+        visual.className = `aspect-container ${directionClass}`;
+        
+        // Note spécifique au signal
+        if (si.note) {
+            instructionText.innerHTML = `<span style="color:var(--accent)">ℹ️ ${si.note}</span>`;
+        } else {
+            instructionText.innerHTML = `Signal ${si.id} - Aspect ${directionClass === "dir-median" ? "Médian" : (directionClass === "dir-gauche" ? "Gauche" : "Droite")}`;
+        }
+        
+        if (window.innerWidth < 768) resultDisplay.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- Initialisation des zones (génération des boutons) ---
+    function initZones() {
+        zoneBtns.innerHTML = '';
+        Object.keys(data).forEach(zone => {
+            const btn = document.createElement('button');
+            btn.innerText = zone;
+            btn.style.background = "#1e2432";
+            btn.onclick = () => selectZone(zone);
+            zoneBtns.appendChild(btn);
+        });
+    }
+
+    // Event listener recherche
+    searchInput.addEventListener('input', searchSignal);
+    
+    // Petite aide : si on clique en dehors pour blur optionnel mais pas gênant
+    initZones();
+    
+    // Optionnel : précharger aucune zone par défaut, mais rendre visible le message
+    signalSelectZone.classList.add('hidden');
+    instructionText.innerText = "Choisissez une zone ou recherchez un signal.";
+</script>
+</body>
+</html>
