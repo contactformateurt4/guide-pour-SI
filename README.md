@@ -1,2 +1,2 @@
 # guide-pour-SI
-T4 - Pupitre SI
+Outil de traçage des signaux d'itinéraire
